@@ -356,6 +356,7 @@ class condGANEvaluator(object):
                 #######################################################
                 # (4) Generate fake images
                 #######################################################
+                
                 fake_imgs, _, attn_maps, bt_attn_maps, mu, logvar = netG(noise_img, 
                     sent_emb, words_embs, glove_words_embs, clabels_feat, mask, 
                     hmaps, rois, fm_rois, num_rois, bt_masks, fm_bt_masks, max_num_roi)

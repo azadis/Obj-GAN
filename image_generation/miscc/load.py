@@ -192,11 +192,17 @@ def get_hmaps_rois(anno_dict, hmap_size, fmap_size, cats_index_dict):
 
 
 def get_gen_rois(anno_dicts, hmap_size, fmap_size, cats_index_dict, sent_ix):
-    rois = anno_dicts[sent_ix]['rois']
-    fm_rois = anno_dicts[sent_ix]['fm_rois']
-    raw_bbox_maps = anno_dicts[sent_ix]['bbox maps']
-    raw_bbox_fmaps = anno_dicts[sent_ix]['bbox fmaps']
-    num_rois = anno_dicts[sent_ix]['num_rois']
+    if len(anno_dicts.keys())>0:
+        rois = anno_dicts[sent_ix]['rois']
+        fm_rois = anno_dicts[sent_ix]['fm_rois']
+        raw_bbox_maps = anno_dicts[sent_ix]['bbox maps']
+        raw_bbox_fmaps = anno_dicts[sent_ix]['bbox fmaps']
+        num_rois = anno_dicts[sent_ix]['num_rois']
+    else:
+        rois = [np.zeros((cfg.ROI.BOXES_NUM, 6)), np.zeros((cfg.ROI.BOXES_NUM, 6)), np.zeros((cfg.ROI.BOXES_NUM, 6))]
+        fm_rois = np.zeros((cfg.ROI.BOXES_NUM, 6))
+        num_rois = 0
+
  
     bbox_maps_fwd = np.zeros(shape=(cfg.ROI.BOXES_NUM, len(cats_index_dict), 
         hmap_size[0], hmap_size[0]))
@@ -495,7 +501,6 @@ def load_anns_data(data_dir, split, postfix, ann_type, filenames, imsize, fmsize
             insanns_dict = x[0]
             del x
             print('Load from: ', filepath)
-
     return insanns_dict
 
 
@@ -652,7 +657,7 @@ def load_gt_insanns(data_dir, filenames, split, imsize, fmsize, cats_index_dict)
 
 def load_gen_insanns(data_dir, filenames, split, imsize, fmsize, cats_index_dict):
     print('creating %s gen_insanns'%(split))
-    gen_dir = '%s/gen_masks/'%(data_dir)
+    gen_dir = '%s/gen_masks_pretrained/box_ckpt/'%(data_dir)
     insanns_dict = {}
     
     for img_index in range(len(filenames)):
@@ -667,7 +672,6 @@ def load_gen_insanns(data_dir, filenames, split, imsize, fmsize, cats_index_dict
         gen_bbox_paths_indices2 = np.argsort(gen_bbox_paths_indices)
         gen_bbox_paths = [gen_bbox_paths[index] for index in gen_bbox_paths_indices2]
         gen_bbox_paths_indices.sort()
-
         gen_boxes_set = []
         for gen_bbox_path in gen_bbox_paths:
             sub_gen_bbox_path = '%s/boxes.txt'%(gen_bbox_path)
@@ -690,7 +694,6 @@ def load_gen_insanns(data_dir, filenames, split, imsize, fmsize, cats_index_dict
             for branch_index in range(cfg.TREE.BRANCH_NUM):
                 rois.append(np.zeros(shape=(cfg.ROI.BOXES_NUM, cfg.ROI.BOXES_DIM)))
             fm_rois = np.zeros(shape=(cfg.ROI.BOXES_NUM, cfg.ROI.BOXES_DIM))
-
             if gen_boxes_set[boxes_index] is None:
                 anno_dict['rois'] = rois
                 anno_dict['fm_rois'] = fm_rois
@@ -772,5 +775,4 @@ def load_gen_insanns(data_dir, filenames, split, imsize, fmsize, cats_index_dict
             anno_dicts[gen_bbox_paths_index] = anno_dict
 
         insanns_dict[filenames[img_index]] = anno_dicts
-
     return insanns_dict

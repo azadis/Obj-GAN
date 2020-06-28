@@ -146,7 +146,7 @@ if opt.is_training:
 
     # train
     t = SupervisedTrainer(lloss=lloss, bloss=bloss, batch_size=opt.batch_size, 
-        checkpoint_every=100, print_every=50, expt_dir=opt.expt_dir, 
+        checkpoint_every=10000, print_every=50, expt_dir=opt.expt_dir, 
         train_cap_lang=train_cap_lang, train_label_lang=train_label_lang, x_mean_std=x_mean_std, 
         y_mean_std=y_mean_std, w_mean_std=w_mean_std, r_mean_std=r_mean_std)
 
@@ -173,7 +173,7 @@ elif not opt.is_training and opt.load_checkpoint is not None:
         print('calculating means and stds of box positions and sizes...')
         get_class_sta(opt.train_path, opt.gaussian_dict_path)
 
-    gaussian_dict = np.load(opt.gaussian_dict_path).item()
+    gaussian_dict = np.load(opt.gaussian_dict_path, allow_pickle=True).item()
 
     hidden_size = opt.embedding_dim
     encoder = PreEncoderRNN(len(cap_word2index), nhidden=opt.embedding_dim)

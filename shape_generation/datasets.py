@@ -405,6 +405,7 @@ class TextDataset(data.Dataset):
                 print('Save to: ', filepath)
         else:
             with open(filepath, 'rb') as f:
+                print(filepath)
                 x = pickle.load(f)
                 insanns_dict = x[0]
                 del x

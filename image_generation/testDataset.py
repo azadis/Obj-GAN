@@ -15,6 +15,7 @@ from torch.autograd import Variable
 import torchvision.transforms as transforms
 import numpy.random as random
 import os
+import numpy as np
 
 class TestDataset(data.Dataset):
     def __init__(self, data_dir, split='test',
@@ -96,9 +97,8 @@ class TestDataset(data.Dataset):
 
         elif cfg.TEST.USE_GT_BOX_SEG == 2: # use gen box and gen seg
             bbox_maps_fwd, bbox_maps_bwd, bbox_fmaps, rois, fm_rois, num_rois \
-                = get_gen_rois(self.insanns_gen_dict[key], self.imsize, self.fmsize, 
-                    self.cats_index_dict, sent_ix)
-
+            = get_gen_rois(self.insanns_gen_dict[key], self.imsize, self.fmsize, self.cats_index_dict, sent_ix)
+            
             return imgs, acts, caps, glove_caps, cap_len, bbox_maps_fwd, bbox_maps_bwd, \
                 bbox_fmaps, rois, fm_rois, num_rois, cls_id, key, new_sent_ix
 
@@ -206,6 +206,7 @@ def prepare_gen_data(data):
         else:
             real_imgs.append(Variable(imgs[i]))
             real_rois.append(Variable(rois[i]))
+
 
     acts = acts[sorted_cap_indices].numpy()
     captions = captions[sorted_cap_indices].squeeze()

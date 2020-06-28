@@ -100,11 +100,12 @@ if __name__ == "__main__":
 
     # Define models and go to train/evaluate
     algo = trainer(output_dir, dataloader, dataset)
-
+    print('model defined')
     start_t = time.time()
     if cfg.TRAIN.FLAG:
         algo.train()
     else:
+        print('sampling')
         algo.sampling(split_dir)  # generate images for the whole val dataset
 
     end_t = time.time()
