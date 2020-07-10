@@ -30,6 +30,8 @@ def parse_args():
     parser.add_argument('--MAX_EPOCH', type=int, default=60)
     parser.add_argument('--WORKERS', type=int, default=0)
     parser.add_argument('--NET_G', type=str, default='')
+    parser.add_argument('--CAPTIONS_FILE', type=str, default='captions.pickle')
+    parser.add_argument('--TEST_DIR', type=str, default='test')
     # tunable argument
     parser.add_argument('--DISCRIMINATOR_LR', type=float, default=0.0002)
     parser.add_argument('--GENERATOR_LR', type=float, default=0.0002)
@@ -52,6 +54,7 @@ if __name__ == "__main__":
     cfg.TRAIN.NET_E = cfg.DATA_DIR + cfg.TRAIN.NET_E
     cfg.TRAIN.MAX_EPOCH = args.MAX_EPOCH
     cfg.TRAIN.WORKERS = args.WORKERS
+    cfg.TEXT.CAPTIONS_FILE = args.CAPTIONS_FILE
     #
     cfg.TRAIN.DISCRIMINATOR_LR = args.DISCRIMINATOR_LR
     cfg.TRAIN.GENERATOR_LR = args.GENERATOR_LR
@@ -61,6 +64,7 @@ if __name__ == "__main__":
     cfg.GAN.R_NUM = args.R_NUM
     cfg.TRAIN.BATCH_SIZE = args.BATCH_SIZE
     cfg.TRAIN.FLAG = args.FLAG
+    cfg.TEST.DIR = args.TEST_DIR
 
     if args.gpu_ids != '-1':
         cfg.GPU_IDS = [int(gpu_id) for gpu_id in args.gpu_ids.split(',')]
@@ -88,11 +92,12 @@ if __name__ == "__main__":
     split_dir, bshuffle = 'train', True
     if not cfg.TRAIN.FLAG:
         bshuffle = False
-        split_dir = 'test'
+        split_dir = cfg.TEST.DIR
 
+    print(output_dir, cfg.DATA_DIR, split_dir)
     # Get data loader
     dataset = TextDataset(cfg.DATA_DIR, split_dir,
-                          base_size=cfg.TREE.BASE_SIZE)
+                          base_size=cfg.TREE.BASE_SIZE, test_dir=cfg.TEST.DIR)
     assert dataset
     dataloader = torch.utils.data.DataLoader(
         dataset, batch_size=cfg.TRAIN.BATCH_SIZE,

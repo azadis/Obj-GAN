@@ -45,20 +45,24 @@ def reorg_boxes_arr(boxes_arr):
 	return new_boxes_arr
 
 dataDir = '../data/coco'
+name = 'cow'
 dataType = 'INTP_'
 dataType_out = 'intp'
 boxes_dim = 6
 display_step = 500
 
-text_path = '%s/interpolate_captions.txt'%(dataDir)
+text_path = '%s/%s_captions.txt'%( dataDir, name)
 with open(text_path, "r") as f:
 	caps = f.readlines()
 
 xs_total, ys_total, ws_total, hs_total = [], [], [], []
-fout_bbox_label = open('%s/bbox_label/input_%s.txt'%(dataDir, dataType_out), 'w')
-fout_filename = open('%s/bbox_label/filenames_%s.txt'%(dataDir, dataType_out), 'w')
 
-for cap_ind in xrange(0,len(caps)):
+if not os.path.exists('%s/%s/box_label/'%(dataDir, name)):
+	os.makedirs('%s/%s/box_label/'%(dataDir, name))
+fout_bbox_label = open('%s/%s/box_label/input_%s.txt'%(dataDir, name, dataType_out), 'w')
+fout_filename = open('%s/%s/box_label/filenames_%s.txt'%(dataDir, name, dataType_out), 'w')
+
+for cap_ind in range(len(caps)):
 	if cap_ind % display_step == 0:
 		print('%07d / %07d'%(cap_ind, len(caps)))
 
@@ -77,8 +81,9 @@ for cap_ind in xrange(0,len(caps)):
 	ls = [str(int(l)) for l in ls]
 
 	line = "\t".join([" ".join(xs), " ".join(ys), " ".join(ws), " ".join(hs), " ".join(ls)])
-
-	cap = caps[cap_ind].decode('utf8').split(',')[0].split('\n')[0].replace("\ufffd\ufffd", " ")
+	print(caps[cap_ind])
+	# cap = caps[cap_ind].decode('utf8').split(',')[0].split('\n')[0].replace("\ufffd\ufffd", " ")
+	cap = caps[cap_ind].split(',')[0].split('\n')[0].replace("\ufffd\ufffd", " ")
 	tokenizer = RegexpTokenizer(r'\w+')
 	tokens = tokenizer.tokenize(cap.lower())
 	tokens_new = []

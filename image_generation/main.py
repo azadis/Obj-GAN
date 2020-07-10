@@ -36,6 +36,8 @@ def parse_args():
     parser.add_argument('--SAMPLE_VAL', dest='SAMPLE_VAL', action='store_true')
     parser.add_argument('--PRINT_INTERVAL', type=int, default=100)
     parser.add_argument('--DISPLAY_INTERVAL', type=int, default=500)
+    parser.add_argument('--TEST_DIR', type=str, default='test')
+    parser.add_argument('--CAPTIONS_FILE', type=str, default='captions.pickle')
     # tunable argument
     parser.add_argument('--DISCRIMINATOR_LR', type=float, default=0.0002)
     parser.add_argument('--GENERATOR_LR', type=float, default=0.0002)
@@ -80,6 +82,8 @@ if __name__ == "__main__":
     cfg.TRAIN.BATCH_SIZE = args.BATCH_SIZE
     cfg.TREE.BRANCH_NUM = args.BRANCH_NUM
     cfg.TRAIN.FLAG = args.FLAG
+    cfg.TEST.DIR = args.TEST_DIR
+    cfg.TEXT.CAPTIONS_FILE = args.CAPTIONS_FILE
 
     if args.gpu_ids != '-1':
         cfg.GPU_IDS = [int(gpu_id) for gpu_id in args.gpu_ids.split(',')]
@@ -108,7 +112,7 @@ if __name__ == "__main__":
     split_dir, bshuffle = 'train', True
     if not cfg.TRAIN.FLAG:
         bshuffle = False
-        split_dir = 'test'
+        split_dir = cfg.TEST.DIR
 
     # Get data loader
     imsize = cfg.TREE.BASE_SIZE * (2 ** (cfg.TREE.BRANCH_NUM - 1))
@@ -123,7 +127,7 @@ if __name__ == "__main__":
         algo = trainer(output_dir, dataloader, dataset)
         algo.train()
     else:
-        dataset = TestDataset(cfg.DATA_DIR, split_dir, base_size=cfg.TREE.BASE_SIZE)
+        dataset = TestDataset(cfg.DATA_DIR, split_dir, base_size=cfg.TREE.BASE_SIZE, captions_file=cfg.TEXT.CAPTIONS_FILE, sample_val=cfg.TEST.SAMPLE_VAL)
         assert dataset
         dataloader = torch.utils.data.DataLoader(dataset, batch_size=cfg.TRAIN.BATCH_SIZE,
             drop_last=True, shuffle=bshuffle, num_workers=int(cfg.WORKERS))

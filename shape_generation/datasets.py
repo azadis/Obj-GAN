@@ -114,13 +114,14 @@ def get_hmaps_rois(anno_dict, hmap_size, fmap_size, cats_index_dict):
     return pooled_hmaps, hmaps, bbox_maps_fwd, bbox_maps_bwd, bbox_fmaps, rois, fm_rois, num_rois
 
 class TextDataset(data.Dataset):
-    def __init__(self, data_dir, split='train', base_size=64):
+    def __init__(self, data_dir, split='train', base_size=64, test_dir='test'):
         self.norm = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
         self.embeddings_num = cfg.TEXT.CAPTIONS_PER_IMAGE
         self.imsize = base_size
         self.fmsize = cfg.ROI.FM_SIZE
+        self.test_dir = test_dir
 
         self.data = []
         self.data_dir = data_dir
@@ -131,10 +132,14 @@ class TextDataset(data.Dataset):
         split_dir = os.path.join(data_dir, split)
 
         self.train_names = self.load_filenames(data_dir, 'train')
-        self.test_names = self.load_filenames(data_dir, 'test')
+        self.test_names = self.load_filenames(data_dir, self.test_dir)
 
-        self.filenames, self.captions, self.ixtoword, \
-            self.wordtoix, self.n_words = self.load_text_data(data_dir, split)
+        if split == "train":
+            self.filenames, self.captions, self.ixtoword, \
+                self.wordtoix, self.n_words = self.load_text_data(data_dir, split, cfg.TEXT.CAPTIONS_FILE)
+        else:
+            self.filenames, self.captions, self.ixtoword, \
+                self.wordtoix, self.n_words = self.load_text_data_short(data_dir, split, cfg.TEXT.CAPTIONS_FILE)
 
         self.class_id = self.load_class_id(split_dir, len(self.filenames))
         self.number_example = len(self.filenames)
@@ -217,6 +222,7 @@ class TextDataset(data.Dataset):
         img_bytes = []
         print('start loading bigfile (%0.02f GB) into memory' % (os.path.getsize(filepath)/1024/1024/1024))
         with open(filepath, 'rb') as fid:
+            print(filepath)
             for img_index in range(len(filenames)):
                 img_bytes_len = struct.unpack('i', fid.read(4))[0]
                 img_bytes.append(fid.read(img_bytes_len))
@@ -258,9 +264,11 @@ class TextDataset(data.Dataset):
             fm_rois = np.zeros(shape=(cfg.ROI.BOXES_NUM, cfg.ROI.BOXES_DIM))
 
             ### 2. fetch image id and the corresponding annotation ids
-            img_id = coco.getImgId(filenames[img_index])
-
-            crowd_annIds, noncrowd_annIds = coco.getAnnIds(imgIds=img_id)
+            try:
+                img_id = coco.getImgId(filenames[img_index])
+                crowd_annIds, noncrowd_annIds = coco.getAnnIds(imgIds=img_id)
+            except:
+                noncrowd_annIds = []
 
             ### 3. early finish if no annotations found
             if len(noncrowd_annIds) == 0:
@@ -451,8 +459,8 @@ class TextDataset(data.Dataset):
         return [train_captions_new, test_captions_new,
                 ixtoword, wordtoix, len(ixtoword)]
 
-    def load_text_data(self, data_dir, split):
-        filepath = os.path.join(data_dir, 'captions.pickle')
+    def load_text_data(self, data_dir, split, captions='captions.pickle'):
+        filepath = os.path.join(data_dir, captions)
         if not os.path.isfile(filepath):
             train_captions = self.load_captions(data_dir, self.train_names)
             test_captions = self.load_captions(data_dir, self.test_names)
@@ -481,6 +489,39 @@ class TextDataset(data.Dataset):
             filenames = self.test_names
 
         return filenames, captions, ixtoword, wordtoix, n_words
+
+    def load_text_data_short(self, data_dir, split, captions='captions_short.pickle'):
+        orignal_captions = os.path.join(data_dir, "captions.pickle")
+        assert os.path.exists(orignal_captions)
+        with open(orignal_captions, 'rb') as f:
+            x = pickle.load(f)
+            train_captions, test_captions = x[0], x[1]
+            ixtoword, wordtoix = x[2], x[3]
+            del x
+            n_words = len(ixtoword)
+            print('Load from: ', orignal_captions)
+
+
+        filepath = os.path.join(data_dir, captions)
+        short_test_captions = self.load_captions(data_dir, self.test_names)
+        short_test_captions_new = []
+        for t in short_test_captions:
+            rev = []
+            for w in t:
+                if w in wordtoix:
+                    rev.append(wordtoix[w])
+            # rev.append(0)  # do not need '<end>' token
+            short_test_captions_new.append(rev)
+        short_test_captions=short_test_captions_new
+
+        with open(filepath, 'wb') as f:
+            pickle.dump([train_captions, short_test_captions,
+                         ixtoword, wordtoix], f, protocol=2)
+            print('Save to: ', filepath)
+        captions = short_test_captions
+        filenames = self.test_names
+        return filenames, captions, ixtoword, wordtoix, n_words
+
 
     def load_class_id(self, data_dir, total_num):
         if os.path.isfile(data_dir + '/class_info.pickle'):
@@ -533,6 +574,7 @@ class TextDataset(data.Dataset):
             bbox = None
             data_dir = self.data_dir
 
+        
         imgs = get_imgs(self.img_bytes[index], self.imsize, bbox, normalize=self.norm)
 
         pooled_hmaps, hmaps, bbox_maps_fwd, bbox_maps_bwd, bbox_fmaps, \
