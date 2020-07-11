@@ -568,13 +568,16 @@ class INIT_STAGE_G_MAIN(nn.Module):
             bt_slabels_mask = bt_mask.unsqueeze(2).repeat(1, 1, self.ef_dim2, 1, 1)
             bt_slabels_code = pprocess_bt_attns(slabels_feat, ih, iw, bt_slabels_mask)
         else:
-            bt_c_code = Variable(torch.Tensor(c_code.size()).zero_())
-            bt_att = Variable(torch.Tensor(att.size()).zero_())
-            bt_slabels_code = Variable(torch.Tensor(c_code.size(0), self.ef_dim2, 
-                c_code.size(2), c_code.size(3)).zero_())
+            bt_c_code = Variable(torch.Tensor(h_code_hmap.size()).zero_())
+            # bt_att = Variable(torch.Tensor(att.size()).zero_())
+            # bt_slabels_code = Variable(torch.Tensor(c_code.size(0), self.ef_dim2, 
+            #     c_code.size(2), c_code.size(3)).zero_())
+            bt_slabels_code = Variable(torch.Tensor(h_code_hmap.size(0), self.ef_dim2, 
+                h_code_hmap.size(2), h_code_hmap.size(3)).zero_())
+
             if cfg.CUDA:
                 bt_c_code = bt_c_code.cuda()
-                bt_att = bt_att.cuda()
+                # bt_att = bt_att.cuda()
                 bt_slabels_code = bt_slabels_code.cuda()
 
         out_code = torch.cat((h_code_hmap, h_code1_sent, bt_c_code, bt_slabels_code), 1)

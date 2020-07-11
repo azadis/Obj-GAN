@@ -229,6 +229,7 @@ class condGANEvaluator(object):
             im.save(fullpath)
 
     def save_singleimages(self, images, keys, sent_ids):
+
         images = images.detach()
         for i in range(images.size(0)):
             fullpath = '%s/%s_%d.jpg' % (self.image_dir, keys[i], sent_ids[i])
@@ -302,6 +303,7 @@ class condGANEvaluator(object):
                     imgs, acts, captions, glove_captions, cap_lens, bbox_maps_fwd, \
                         bbox_maps_bwd, bbox_fmaps, rois, fm_rois, num_rois, \
                         class_ids, keys, sent_ids = prepare_gen_data(data)
+
                     gt_hmaps = None
 
                 #######################################################
@@ -356,6 +358,7 @@ class condGANEvaluator(object):
                 #######################################################
                 # (4) Generate fake images
                 #######################################################
+                
                 fake_imgs, _, attn_maps, bt_attn_maps, mu, logvar = netG(noise_img, 
                     sent_emb, words_embs, glove_words_embs, clabels_feat, mask, 
                     hmaps, rois, fm_rois, num_rois, bt_masks, fm_bt_masks, max_num_roi)

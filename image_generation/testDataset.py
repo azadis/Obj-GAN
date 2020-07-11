@@ -4,7 +4,7 @@ from __future__ import print_function
 from __future__ import unicode_literals
 
 from miscc.config import cfg
-from miscc.load import load_filenames, load_text_data, load_sample_filenames
+from miscc.load import load_filenames, load_text_data, load_text_data_short, load_sample_filenames
 from miscc.load import load_glove_emb, load_cat_label, load_class_id, load_cats
 from miscc.load import load_imgs_data, load_acts_data, load_anns_data
 from miscc.load import get_imgs, get_caption, get_hmaps_rois, get_gen_rois
@@ -15,14 +15,16 @@ from torch.autograd import Variable
 import torchvision.transforms as transforms
 import numpy.random as random
 import os
+import numpy as np
 
 class TestDataset(data.Dataset):
     def __init__(self, data_dir, split='test',
-                 base_size=64):
+                 base_size=64, captions_file='captions.pickle', sample_val=False):
         self.norm = transforms.Compose([
             transforms.ToTensor(),
             transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))])
         self.embeddings_num = cfg.TEXT.CAPTIONS_PER_IMAGE
+        self.SAMPLE_VAL = sample_val
 
         self.imsize = []
         for i in range(cfg.TREE.BRANCH_NUM):
@@ -33,14 +35,15 @@ class TestDataset(data.Dataset):
 
         self.data = []
         self.data_dir = data_dir
+        self.captions_file = captions_file
         split_dir = os.path.join(data_dir, split)
 
         train_names = load_filenames(data_dir, 'train')
-        test_names = load_filenames(data_dir, 'test')
+        test_names = load_filenames(data_dir, split)
         self.filenames, self.captions, self.ixtoword, self.wordtoix, self.n_words \
-            = load_text_data(data_dir, split, train_names, test_names)
+            = load_text_data_short(data_dir, split, train_names, test_names, self.embeddings_num, self.captions_file)
 
-        if cfg.TEST.SAMPLE_VAL:
+        if self.SAMPLE_VAL:
             self.filenames, self.sentids = load_sample_filenames(data_dir)
 
         self.glove_captions, self.glove_ixtoword, self.glove_wordtoix, \
@@ -54,6 +57,7 @@ class TestDataset(data.Dataset):
         self.cats_dict, self.cats_index_dict = load_cats(data_dir, self.wordtoix)
         self.img_bytes = load_imgs_data(data_dir, split, self.filenames)
         self.acts_dict = load_acts_data(data_dir, split)
+
 
         if cfg.TEST.USE_GT_BOX_SEG <= 1:
             self.insanns_gt_dict = load_anns_data(data_dir, split, '_gt_insanns.pickle', 
@@ -78,7 +82,7 @@ class TestDataset(data.Dataset):
 
         acts = self.acts_dict[key]
         # random select a sentence
-        if cfg.TEST.SAMPLE_VAL:
+        if self.SAMPLE_VAL:
             new_sent_ix = self.sentids[index]
             sent_ix = new_sent_ix % self.embeddings_num
         else:
@@ -96,9 +100,8 @@ class TestDataset(data.Dataset):
 
         elif cfg.TEST.USE_GT_BOX_SEG == 2: # use gen box and gen seg
             bbox_maps_fwd, bbox_maps_bwd, bbox_fmaps, rois, fm_rois, num_rois \
-                = get_gen_rois(self.insanns_gen_dict[key], self.imsize, self.fmsize, 
-                    self.cats_index_dict, sent_ix)
-
+            = get_gen_rois(self.insanns_gen_dict[key], self.imsize, self.fmsize, self.cats_index_dict, sent_ix)
+            
             return imgs, acts, caps, glove_caps, cap_len, bbox_maps_fwd, bbox_maps_bwd, \
                 bbox_fmaps, rois, fm_rois, num_rois, cls_id, key, new_sent_ix
 
@@ -206,6 +209,7 @@ def prepare_gen_data(data):
         else:
             real_imgs.append(Variable(imgs[i]))
             real_rois.append(Variable(rois[i]))
+
 
     acts = acts[sorted_cap_indices].numpy()
     captions = captions[sorted_cap_indices].squeeze()

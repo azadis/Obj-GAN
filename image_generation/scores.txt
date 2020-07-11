@@ -1,0 +1,3 @@
+inception_score: mean, std, mean_conf, std_conf, accu_w, std_w, accu_s, std_s, fid_score
+inception_score: 27.779978, 0.222263, 0.985769, 0.004567, 92.310160, 2.229494, 89.945187, 2.283764, 23.918812
+Total time for test: 8186.151265859604

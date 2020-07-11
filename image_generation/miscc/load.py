@@ -87,6 +87,7 @@ def write_imgs(data_dir, filenames, filepath):
 def read_imgs(data_dir, filenames, filepath):
     img_bytes = []
     print('start loading bigfile (%0.02f GB) into memory' % (os.path.getsize(filepath)/1024/1024/1024))
+    print('fp',filepath)
     with open(filepath, 'rb') as fid:
         for img_index in range(len(filenames)):
             img_bytes_len = struct.unpack('i', fid.read(4))[0]
@@ -192,11 +193,17 @@ def get_hmaps_rois(anno_dict, hmap_size, fmap_size, cats_index_dict):
 
 
 def get_gen_rois(anno_dicts, hmap_size, fmap_size, cats_index_dict, sent_ix):
-    rois = anno_dicts[sent_ix]['rois']
-    fm_rois = anno_dicts[sent_ix]['fm_rois']
-    raw_bbox_maps = anno_dicts[sent_ix]['bbox maps']
-    raw_bbox_fmaps = anno_dicts[sent_ix]['bbox fmaps']
-    num_rois = anno_dicts[sent_ix]['num_rois']
+    if len(anno_dicts.keys())>0:
+        rois = anno_dicts[sent_ix]['rois']
+        fm_rois = anno_dicts[sent_ix]['fm_rois']
+        raw_bbox_maps = anno_dicts[sent_ix]['bbox maps']
+        raw_bbox_fmaps = anno_dicts[sent_ix]['bbox fmaps']
+        num_rois = anno_dicts[sent_ix]['num_rois']
+    else:
+        rois = [np.zeros((cfg.ROI.BOXES_NUM, 6)), np.zeros((cfg.ROI.BOXES_NUM, 6)), np.zeros((cfg.ROI.BOXES_NUM, 6))]
+        fm_rois = np.zeros((cfg.ROI.BOXES_NUM, 6))
+        num_rois = 0
+
  
     bbox_maps_fwd = np.zeros(shape=(cfg.ROI.BOXES_NUM, len(cats_index_dict), 
         hmap_size[0], hmap_size[0]))
@@ -214,11 +221,11 @@ def get_gen_rois(anno_dicts, hmap_size, fmap_size, cats_index_dict, sent_ix):
     return bbox_maps_fwd, bbox_maps_bwd, bbox_fmaps, rois, fm_rois, num_rois
 
 ################################### load text data #################################
-def load_text_data(data_dir, split, train_names, test_names):
-    filepath = os.path.join(data_dir, 'captions.pickle')
+def load_text_data(data_dir, split, train_names, test_names, embeddings_num=5, captions='captions.pickle'):
+    filepath = os.path.join(data_dir, captions)
     if not os.path.isfile(filepath):
-        train_captions = load_captions(data_dir, train_names)
-        test_captions = load_captions(data_dir, test_names)
+        train_captions = load_captions(data_dir, train_names, embeddings_num)
+        test_captions = load_captions(data_dir, test_names, embeddings_num)
 
         train_captions, test_captions, ixtoword, wordtoix, n_words = \
             build_dictionary(train_captions, test_captions)
@@ -244,6 +251,41 @@ def load_text_data(data_dir, split, train_names, test_names):
         filenames = test_names
     return filenames, captions, ixtoword, wordtoix, n_words
 
+################################### load text data #################################
+def load_text_data_short(data_dir, split, train_names, test_names, embeddings_num=5, captions='captions_short.pickle'):
+    orignal_captions = os.path.join(data_dir, "captions.pickle")
+    assert os.path.exists(orignal_captions)
+    with open(orignal_captions, 'rb') as f:
+        x = pickle.load(f)
+        train_captions, test_captions = x[0], x[1]
+        ixtoword, wordtoix = x[2], x[3]
+        del x
+        n_words = len(ixtoword)
+        print('Load from: ', orignal_captions)
+
+
+    filepath = os.path.join(data_dir, captions)
+
+    short_test_captions = load_captions(data_dir, test_names, embeddings_num)
+
+    short_test_captions_new = []
+    for t in short_test_captions:
+        rev = []
+        for w in t:
+            if w in wordtoix:
+                rev.append(wordtoix[w])
+        # rev.append(0)  # do not need '<end>' token
+        short_test_captions_new.append(rev)
+    short_test_captions=short_test_captions_new
+
+    with open(filepath, 'wb') as f:
+        pickle.dump([train_captions, short_test_captions,
+                     ixtoword, wordtoix], f, protocol=2)
+        print('Save to: ', filepath)
+    captions = short_test_captions
+    filenames = test_names
+    return filenames, captions, ixtoword, wordtoix, n_words
+
 
 def load_captions(data_dir, filenames, embeddings_num):
     all_captions = []
@@ -262,7 +304,7 @@ def load_captions(data_dir, filenames, embeddings_num):
                 tokens = tokenizer.tokenize(cap.lower())
                 # print('tokens', tokens)
                 if len(tokens) == 0:
-                    print('cap', cap)
+                    # print('cap', cap, cap_path)
                     continue
 
                 tokens_new = []
@@ -374,8 +416,8 @@ def load_glove_vocab(dataset_path):
 def load_glove_emb(data_dir, split, train_names, test_names):
     filepath = os.path.join(data_dir, 'captions_glove.pickle')
     if not os.path.isfile(filepath):
-        train_path = '%s/bbox_label/input_train2014.txt' % (data_dir)
-        test_path = '%s/bbox_label/input_val2014.txt' % (data_dir)
+        train_path = '%s/box_label/input_train2014.txt' % (data_dir)
+        test_path = '%s/box_label/input_val2014.txt' % (data_dir)
 
         train_vocab = load_glove_vocab(train_path)
         test_vocab = load_glove_vocab(test_path)
@@ -447,13 +489,13 @@ def load_filenames(data_dir, split):
 def load_sample_filenames(data_dir):
     filepath = '%s/sample/filenames.txt' % (data_dir)
     if os.path.isfile(filepath):
-        with open(filepath, 'rb') as f:
+        with open(filepath, 'r') as f:
             filenames_sentids = f.readlines()
         print('Load filenames from: %s (%d)' % (filepath, len(filenames_sentids)))
     else:
         filenames_sentids = []
 
-    filenames_sentids = [name.replace("\r\n", "") for name in filenames_sentids]
+    filenames_sentids = [name.replace("\n", "") for name in filenames_sentids]
     filenames, sentids = [], []
     for pair in filenames_sentids:
         filename, sentid = pair.split(',')
@@ -495,7 +537,6 @@ def load_anns_data(data_dir, split, postfix, ann_type, filenames, imsize, fmsize
             insanns_dict = x[0]
             del x
             print('Load from: ', filepath)
-
     return insanns_dict
 
 
@@ -652,7 +693,7 @@ def load_gt_insanns(data_dir, filenames, split, imsize, fmsize, cats_index_dict)
 
 def load_gen_insanns(data_dir, filenames, split, imsize, fmsize, cats_index_dict):
     print('creating %s gen_insanns'%(split))
-    gen_dir = '%s/gen_masks/'%(data_dir)
+    gen_dir = '%s/gen_masks_pretrained/box_ckpt/'%(data_dir)
     insanns_dict = {}
     
     for img_index in range(len(filenames)):
@@ -667,7 +708,6 @@ def load_gen_insanns(data_dir, filenames, split, imsize, fmsize, cats_index_dict
         gen_bbox_paths_indices2 = np.argsort(gen_bbox_paths_indices)
         gen_bbox_paths = [gen_bbox_paths[index] for index in gen_bbox_paths_indices2]
         gen_bbox_paths_indices.sort()
-
         gen_boxes_set = []
         for gen_bbox_path in gen_bbox_paths:
             sub_gen_bbox_path = '%s/boxes.txt'%(gen_bbox_path)
@@ -690,7 +730,6 @@ def load_gen_insanns(data_dir, filenames, split, imsize, fmsize, cats_index_dict
             for branch_index in range(cfg.TREE.BRANCH_NUM):
                 rois.append(np.zeros(shape=(cfg.ROI.BOXES_NUM, cfg.ROI.BOXES_DIM)))
             fm_rois = np.zeros(shape=(cfg.ROI.BOXES_NUM, cfg.ROI.BOXES_DIM))
-
             if gen_boxes_set[boxes_index] is None:
                 anno_dict['rois'] = rois
                 anno_dict['fm_rois'] = fm_rois
@@ -772,5 +811,4 @@ def load_gen_insanns(data_dir, filenames, split, imsize, fmsize, cats_index_dict
             anno_dicts[gen_bbox_paths_index] = anno_dict
 
         insanns_dict[filenames[img_index]] = anno_dicts
-
     return insanns_dict

@@ -40,6 +40,9 @@ __C.TRAIN.SMOOTH.INS_LAMBDA = 1.0
 __C.TRAIN.SMOOTH.GLB_LAMBDA = 1.0
 __C.TRAIN.SMOOTH.PCP_LAMBDA = 10.0
 
+__C.TEST = edict()
+__C.TEST.DIR = 'test'
+
 # Modal options
 __C.GAN = edict()
 __C.GAN.DF_DIM = 96
@@ -52,6 +55,7 @@ __C.TEXT = edict()
 __C.TEXT.CAPTIONS_PER_IMAGE = 5
 __C.TEXT.EMBEDDING_DIM = 256
 __C.TEXT.WORDS_NUM = 40
+__C.TEXT.CAPTIONS_FILE = 'captions.pickle'
 
 # ROI options
 __C.ROI = edict()

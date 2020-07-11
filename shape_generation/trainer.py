@@ -346,6 +346,7 @@ class condGANTrainer(object):
             # the path to save generated images
             s_tmp = model_dir[:model_dir.rfind('.pth')]
             save_dir = '%s/%s' % (s_tmp, split_dir)
+            print('save generated images to %s'%save_dir)
             mkdir_p(save_dir)
 
             cnt = 0
@@ -395,7 +396,7 @@ class condGANTrainer(object):
                         im = im.astype(np.uint8)
                         im = np.transpose(im, (1, 2, 0))
                         im = Image.fromarray(im)
-
-                        cat = cats_list[j][k]
-                        fullpath = '{0}_{1}.png'.format(s_tmp, cat)
-                        im.save(fullpath)
+                        if len(cats_list[j])>0:
+                            cat = cats_list[j][k]
+                            fullpath = '{0}_{1}.png'.format(s_tmp, cat)
+                            im.save(fullpath)

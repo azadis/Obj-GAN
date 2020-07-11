@@ -38,7 +38,7 @@ class TrainDataset(data.Dataset):
         train_names = load_filenames(data_dir, 'train')
         test_names = load_filenames(data_dir, 'test')
         self.filenames, self.captions, self.ixtoword, self.wordtoix, self.n_words \
-            = load_text_data(data_dir, split, train_names, test_names)
+            = load_text_data(data_dir, split, train_names, test_names, self.embeddings_num)
 
         self.glove_captions, self.glove_ixtoword, self.glove_wordtoix, \
             self.glove_embed = load_glove_emb(data_dir, split, train_names, test_names)

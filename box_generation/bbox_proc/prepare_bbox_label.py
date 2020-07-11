@@ -47,9 +47,9 @@ def reorg_boxes_arr(boxes_arr):
 # COCO_train2014_
 
 dataDir = '../data/coco'
-dataType = 'COCO_train2014_'
-dataType_out = 'train2014'
-outputDirname = 'bbox_label'
+dataType = 'COCO_val2014_'
+dataType_out = 'new_val2014'
+outputDirname = 'box_label'
 
 textDir = '%s/text/%s*.txt'%(dataDir, dataType)
 mainBoxDir = '%s/masks'%(dataDir)
@@ -57,6 +57,7 @@ mainBoxDir = '%s/masks'%(dataDir)
 text_files = glob.glob(textDir)
 text_nms = [path_leaf(path) for path in text_files]
 text_nms_wo_ext = [name.split(".")[0] for name in text_nms]
+print(text_nms_wo_ext)
 
 max_bbox_num = 10
 boxes_dim = 6
@@ -70,7 +71,7 @@ fout_filename = open('%s/%s/filenames_%s.txt'%(dataDir, outputDirname, dataType_
 fout_bbox_label = open('%s/%s/input_%s.txt'%(dataDir, outputDirname, dataType_out), 'w')
 fout_mean_std = open('%s/%s/mean_std_%s.txt'%(dataDir, outputDirname, dataType_out), 'w')
 
-for img_ind in xrange(0,len(text_nms_wo_ext)):
+for img_ind in range(len(text_nms_wo_ext)):
 	if img_ind % display_step == 0:
 		print('%07d / %07d'%(img_ind, len(text_nms_wo_ext)))
 
@@ -78,6 +79,7 @@ for img_ind in xrange(0,len(text_nms_wo_ext)):
 		caps = f.readlines()
 
 	hmapDir = '%s/%s/*.jpg'%(mainBoxDir, text_nms_wo_ext[img_ind])
+	print(hmapDir)
 	hmap_files = glob.glob(hmapDir)
 
 	# check if hmap_files exist
@@ -90,7 +92,7 @@ for img_ind in xrange(0,len(text_nms_wo_ext)):
 
 	boxes_arr = np.zeros((len(boxes), boxes_dim), dtype=float)
 	noncrowd_mask = []
-	for box_ind in xrange(len(boxes)):
+	for box_ind in range(len(boxes)):
 		box = boxes[box_ind].split(',')
 		box = [int(float(num)) for num in box]
 		boxes_arr[box_ind,:] = np.array(box)

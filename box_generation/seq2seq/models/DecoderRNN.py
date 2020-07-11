@@ -398,6 +398,7 @@ class DecoderRNN(BaseRNN):
     def sample_bivariate_normal(self, u_x, u_y, sigma_x, sigma_y, rho_xy, 
         temperature, greedy=False):
         # inputs must be floats
+        u_x, u_y, sigma_x, sigma_y, rho_xy = u_x.cpu().numpy(), u_y.cpu().numpy(), sigma_x.cpu().numpy(), sigma_y.cpu().numpy(), rho_xy.cpu().numpy()
         if greedy:
             return u_x, u_y
         mean = [u_x, u_y]

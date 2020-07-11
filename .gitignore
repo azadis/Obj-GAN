@@ -1,0 +1,9 @@
+output_image_generation/*
+data/coco/gen_masks_pretrained/
+*.pickle
+box_generation/experiment/checkpoints
+*.pyc
+*.bigfile
+data/coco
+image_generation/build
+shape_generation/build
