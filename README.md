@@ -74,20 +74,20 @@ Tips for optimizing the Inception score (though it is boring):
 **Sampling**
 - Modify the following files
   - box_generation:
-``` data/coco/box_label/filenames_short.txt
- data/coco/box_label/input_short.txt```
+`data/coco/box_label/filenames_short.txt
+ data/coco/box_label/input_short.txt`
 
 
  - shape_generation:
-``` data/coco/train/filenames.pickle
-data/coco/test/filenames.pickle test-->test_short```
- - all filenames should be in ```data/coco/text/* ```
+`data/coco/train/filenames.pickle
+data/coco/test/filenames.pickle test-->test_short`
+ - all filenames should be in `data/coco/text/* `
 
 
 - update ../data/coco/test_short/filenames.pickle from ipython/coco
-- if have a new filename, cp a random image to the filename in ```../data/coco/images/```
+- if have a new filename, cp a random image to the filename in `../data/coco/images/`
 
-- if want an specific sent number ```data/coco/sample/filenames.txt```
+- if want an specific sent number `data/coco/sample/filenames.txt`
 
 
 - Run box generator:
